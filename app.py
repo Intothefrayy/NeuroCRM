@@ -24,31 +24,46 @@ except Exception as e:
 @st.cache_resource
 def connect_db():
     try:
-        # ვიღებთ service account-ის ინფორმაციას Streamlit Secrets-დან
+        # ვამოწმებთ, არის თუ არა secrets
         if "gcp_service_account" not in st.secrets:
-            raise Exception("gcp_service_account არ არის Streamlit Secrets-ში!")
+            raise Exception("⚠️ gcp_service_account არ არის Streamlit Secrets-ში!\n\n"
+                          "გადადი: Settings → Secrets და დაამატე Google Service Account-ის ინფო.")
 
         service_account_info = dict(st.secrets["gcp_service_account"])
 
-        # ვამოწმებთ, რომ ყველა საჭირო ველი არის
+        # ვამოწმებთ აუცილებელ ველებს
         required_fields = ["type", "project_id", "private_key_id", "private_key",
                           "client_email", "client_id", "auth_uri", "token_uri"]
         missing = [f for f in required_fields if f not in service_account_info]
         if missing:
-            raise Exception(f"ამ ველები აკლია: {missing}")
+            raise Exception(f"⚠️ Secrets-ში ამ ველები აკლია: {', '.join(missing)}")
 
-        # pygsheets-ის ავტორიზაცია service account-ით
-        gc = pygsheets.authorize(service_account_info=service_account_info)
+        # ვქმნით დროებით JSON ფაილს (pygsheets-ისთვის)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as tmp:
+            json.dump(service_account_info, tmp)
+            tmp_path = tmp.name
 
-        # ვხსნით ცხრილს
-        sh = gc.open("NeuroCRM_DB")
-        return sh
+        try:
+            # pygsheets-ის ავტორიზაცია დროებითი ფაილით
+            gc = pygsheets.authorize(service_file=tmp_path)
+
+            # ვხსნით ცხრილს
+            sh = gc.open("NeuroCRM_DB")
+
+            return sh
+        finally:
+            # ვშლით დროებით ფაილს
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
 
     except Exception as e:
-        st.error(f"❌ Google Sheets-თან კავშირის შეცდომა: {e}")
-        st.error("გთხოვ, დარწმუნდი რომ:")
-        st.error("1. Streamlit Cloud-ზე secrets-ში გაქვს gcp_service_account")
-        st.error("2. Google Sheets-ში NeuroCRM_DB ფაილი გაზიარებულია service account-ის email-ზე")
+        st.error(f"❌ Google Sheets-თან კავშირის შეცდომა:")
+        st.error(f"```\n{str(e)}\n```")
+        st.error("\n**შემოწმების ჩეკლისტი:**")
+        st.error("✓ Streamlit Cloud → Settings → Secrets → გაქვს gcp_service_account?")
+        st.error("✓ Google Cloud → Service Account შექმნილია?")
+        st.error("✓ Google Sheets → NeuroCRM_DB გაზიარებულია service account email-ზე?")
+        st.error(f"\n**Debug ინფო:** Secrets keys = {list(st.secrets.keys())}")
         return None
 
 
