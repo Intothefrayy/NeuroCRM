@@ -6,18 +6,34 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
+import json
+import os
+
+# --- CONFIG & CONSTANTS ---
+# მეილის კონფიგურაცია (ჩაწერე შენი მონაცემები)
+SENDER_EMAIL = st.secrets.get("email", {}).get("sender", "your_email@gmail.com")
+SENDER_PASSWORD = st.secrets.get("email", {}).get("password", "your_password")
+ADMIN_PASSWORD = st.secrets.get("admin_password", "admin123")
 
 
 @st.cache_resource
 def connect_db():
     try:
-        # 1) ვიღებთ service account-ის dict-ს Streamlit Secrets-დან
-        service_account_info = dict(st.secrets["gcp_service_account"])
+        # 1) ვცდილობთ Streamlit Secrets-დან წაკითხვას (Streamlit Cloud-ზე)
+        if "gcp_service_account" in st.secrets:
+            service_account_info = dict(st.secrets["gcp_service_account"])
+        # 2) თუ Secrets არ არის, ვიყენებთ ლოკალურ creds.json ფაილს
+        elif os.path.exists("creds.json"):
+            with open("creds.json", "r") as f:
+                service_account_info = json.load(f)
+        else:
+            st.error("❌ Google Sheets-თან კავშირის პროცესში შეცდომა: [Errno 2] No such file or directory: 'client_secret.json'")
+            return None
 
-        # 2) pygsheets ავტორიზაცია ამ dict-ით
+        # 3) pygsheets ავტორიზაცია
         gc = pygsheets.authorize(service_account_info=service_account_info)
 
-        # 3) ვხსნით ცხრილს სახელით
+        # 4) ვხსნით ცხრილს სახელით
         sh = gc.open("NeuroCRM_DB")
         return sh
 
