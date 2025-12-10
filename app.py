@@ -28,14 +28,8 @@ def connect_db():
             "https://www.googleapis.com/auth/drive",
         ]
 
-        if "gcp_service_account" in st.secrets:
-            # აქ უკვე st.secrets["gcp_service_account"] არის dict-ივით ობიექტი
-            creds_dict = dict(st.secrets["gcp_service_account"])
-            creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-        else:
-            # ლოკალური ფაილის fallback (მაგ. როცა ლოკალურად ტესტავ)
-            creds = ServiceAccountCredentials.from_json_keyfile_name("creds.json", scope)
-
+        # 🎯 იძულებით ვხმარობთ creds.json-ს
+        creds = ServiceAccountCredentials.from_json_keyfile_name("creds.json", scope)
         client = gspread.authorize(creds)
         spreadsheet = client.open("NeuroCRM_DB")
         return spreadsheet
