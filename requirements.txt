@@ -3,4 +3,3 @@ oauth2client
 gspread
 pandas
 streamlit
-smtplib
