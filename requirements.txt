@@ -1,5 +1,3 @@
 pygsheets
-oauth2client
-gspread
 pandas
 streamlit
