@@ -1,42 +1,26 @@
+import pygsheets
 import streamlit as st
 import pandas as pd
-import pygsheets
 from datetime import datetime
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
 
-# --- კონფიგურაცია ---
-st.set_page_config(page_title="NeuroCRM", page_icon="🧠", layout="wide")
 
-# პაროლები და უსაფრთხოება
-ADMIN_PASSWORD = "Neuro2025"
-
-# Gmail-ის მონაცემები (app password-ით)
-SENDER_EMAIL = "your_email@gmail.com"          # ჩაწერე შენი მეილი
-SENDER_PASSWORD = "xxxx xxxx xxxx xxxx"       # ჩაწერე შენი Gmail App Password
-
-
-# --- DATABASE CONNECTION (pygsheets + Streamlit secrets) ---
 @st.cache_resource
 def connect_db():
-    """
-    უკავშირდება Google Sheets-ს pygsheets-ით.
-    იყენებს Streamlit secrets-ში [gcp_service_account] ბლოკს.
-    """
     try:
-        # Secrets-დან ვკითხულობთ service account JSON-ს როგორც dict-ს
+        # 1) ვიღებთ service account-ის dict-ს Streamlit Secrets-დან
         service_account_info = dict(st.secrets["gcp_service_account"])
-    except Exception as e:
-        st.error("❌ Secrets-ში ვერ ვიპოვე [gcp_service_account]. გადაამოწმე Streamlit secrets.")
-        st.error(f"დეტალები: {e}")
-        return None
 
-    try:
+        # 2) pygsheets ავტორიზაცია ამ dict-ით
         gc = pygsheets.authorize(service_account_info=service_account_info)
+
+        # 3) ვხსნით ცხრილს სახელით
         sh = gc.open("NeuroCRM_DB")
         return sh
+
     except Exception as e:
         st.error(f"❌ Google Sheets-თან კავშირის კრიტიკული შეცდომა: {e}")
         return None
