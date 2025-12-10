@@ -21,29 +21,23 @@ SENDER_PASSWORD = "xxxx xxxx xxxx xxxx" # <--- ჩაწერე შენი A
 @st.cache_resource
 def connect_db():
     try:
-        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/spreadsheets",
-                 "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
-        
-        # 1. ვცდილობთ წაკითხვას Cloud Secrets-დან (ახალი მეთოდით)
+        scope = [
+            "https://spreadsheets.google.com/feeds",
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive.file",
+            "https://www.googleapis.com/auth/drive",
+        ]
+
         if "gcp_service_account" in st.secrets:
-            # ვკითხულობთ როგორც ტექსტს და გარდავქმნით JSON-ად
-            secret_value = st.secrets["gcp_service_account"]
-            
-            if "json_content" in secret_value:
-                # ახალი "Safe-Box" მეთოდი
-                creds_dict = json.loads(secret_value["json_content"])
-            else:
-                # ძველი მეთოდი (თუ ვინმემ ხელით გაწერა)
-                creds_dict = secret_value
-            
+            # აქ უკვე st.secrets["gcp_service_account"] არის dict-ივით ობიექტი
+            creds_dict = dict(st.secrets["gcp_service_account"])
             creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-        
-        # 2. თუ Cloud-ზე არ ვართ, ვეძებთ ლოკალურ ფაილს
         else:
-            creds = ServiceAccountCredentials.from_json_keyfile_name('creds.json', scope)
+            # ლოკალური ფაილის fallback (მაგ. როცა ლოკალურად ტესტავ)
+            creds = ServiceAccountCredentials.from_json_keyfile_name("creds.json", scope)
 
         client = gspread.authorize(creds)
-        spreadsheet = client.open('NeuroCRM_DB')
+        spreadsheet = client.open("NeuroCRM_DB")
         return spreadsheet
 
     except Exception as e:
