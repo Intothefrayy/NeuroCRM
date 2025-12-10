@@ -1,3 +1,4 @@
 pygsheets
 pandas
 streamlit
+openpyxl
