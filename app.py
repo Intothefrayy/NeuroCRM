@@ -1,4 +1,5 @@
-import pygsheets
+import gspread
+from google.oauth2.service_account import Credentials
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -6,9 +7,6 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
-import json
-import tempfile
-import os
 
 # --- CONFIGURATION FROM SECRETS ---
 try:
@@ -29,32 +27,22 @@ def connect_db():
             raise Exception("⚠️ gcp_service_account არ არის Streamlit Secrets-ში!\n\n"
                           "გადადი: Settings → Secrets და დაამატე Google Service Account-ის ინფო.")
 
-        service_account_info = dict(st.secrets["gcp_service_account"])
+        # gspread-ის ავტორიზაცია (ბევრად უფრო სანდოა!)
+        scopes = [
+            'https://www.googleapis.com/auth/spreadsheets',
+            'https://www.googleapis.com/auth/drive'
+        ]
 
-        # ვამოწმებთ აუცილებელ ველებს
-        required_fields = ["type", "project_id", "private_key_id", "private_key",
-                          "client_email", "client_id", "auth_uri", "token_uri"]
-        missing = [f for f in required_fields if f not in service_account_info]
-        if missing:
-            raise Exception(f"⚠️ Secrets-ში ამ ველები აკლია: {', '.join(missing)}")
+        credentials = Credentials.from_service_account_info(
+            st.secrets["gcp_service_account"],
+            scopes=scopes
+        )
 
-        # ვქმნით დროებით JSON ფაილს (pygsheets-ისთვის)
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as tmp:
-            json.dump(service_account_info, tmp)
-            tmp_path = tmp.name
+        gc = gspread.authorize(credentials)
 
-        try:
-            # pygsheets-ის ავტორიზაცია დროებითი ფაილით
-            gc = pygsheets.authorize(service_file=tmp_path)
-
-            # ვხსნით ცხრილს
-            sh = gc.open("NeuroCRM_DB")
-
-            return sh
-        finally:
-            # ვშლით დროებით ფაილს
-            if os.path.exists(tmp_path):
-                os.unlink(tmp_path)
+        # ვხსნით ცხრილს
+        sh = gc.open("NeuroCRM_DB")
+        return sh
 
     except Exception as e:
         st.error(f"❌ Google Sheets-თან კავშირის შეცდომა:")
@@ -73,7 +61,7 @@ def send_confirmation_email(to_email: str, patient_name: str, slot_time: str) ->
     უგზავნის პაციენტს ჯავშნის დადასტურების მეილს.
     """
     # თუ შენი მეილი ჯერ არ ჩაგიწერია, ფუნქცია არაფერს აკეთებს
-    if "your_email" in SENDER_EMAIL:
+    if not SENDER_EMAIL or "შენი" in SENDER_EMAIL:
         return False
 
     subject_text = "ჯავშნის დადასტურება - ფსიქოთერაპია"
@@ -107,13 +95,15 @@ NeuroCRM System.
         return False
 
 
-# --- HELPER FUNCTIONS (pygsheets ვერსია) ---
+# --- HELPER FUNCTIONS (gspread ვერსია) ---
 def get_slots_ws(spreadsheet):
-    return spreadsheet.worksheet_by_title("Slots")
+    """აბრუნებს Slots worksheet-ს"""
+    return spreadsheet.worksheet("Slots")
 
 
 def get_patients_ws(spreadsheet):
-    return spreadsheet.worksheet_by_title("Sheet1")
+    """აბრუნებს პაციენტების worksheet-ს"""
+    return spreadsheet.worksheet("Sheet1")
 
 
 def get_free_slots(spreadsheet):
@@ -125,7 +115,7 @@ def get_free_slots(spreadsheet):
         if df.empty:
             return []
 
-        df["Display"] = df["Date"] + " | " + df["Time"]
+        df["Display"] = df["Date"].astype(str) + " | " + df["Time"].astype(str)
         free = df[df["Status"] == "Open"]["Display"].tolist()
         return sorted(free)
     except Exception as e:
@@ -140,10 +130,9 @@ def mark_slot_booked(spreadsheet, slot_display: str) -> bool:
         date_part, time_part = slot_display.split(" | ")
 
         all_values = ws.get_all_values()
-        for i, row in enumerate(all_values):
-            # row index i → sheet row i+1
+        for i, row in enumerate(all_values[1:], start=2):  # skip header
             if len(row) >= 3 and row[0] == date_part and row[1] == time_part and row[2] == "Open":
-                ws.update_value((i + 1, 3), "Booked")
+                ws.update_cell(i, 3, "Booked")
                 return True
         return False
     except Exception as e:
@@ -155,8 +144,7 @@ def add_new_slot(spreadsheet, date, time) -> bool:
     """Slots ფურცელზე ამატებს ახალ Open სლოტს."""
     try:
         ws = get_slots_ws(spreadsheet)
-        # append_table ბოლოს ამატებს ახალ სტრიქონს
-        ws.append_table(values=[str(date), str(time), "Open"], dimension="ROWS")
+        ws.append_row([str(date), str(time), "Open"])
         return True
     except Exception as e:
         st.error(f"ახალი სლოტის დამატების ერორი: {e}")
@@ -168,9 +156,9 @@ def delete_slot(spreadsheet, date, time) -> bool:
     try:
         ws = get_slots_ws(spreadsheet)
         all_values = ws.get_all_values()
-        for i, row in enumerate(all_values):
+        for i, row in enumerate(all_values[1:], start=2):  # skip header
             if row and len(row) >= 2 and row[0] == str(date) and row[1] == str(time):
-                ws.delete_rows(i + 1)
+                ws.delete_rows(i)
                 return True
         return False
     except Exception as e:
@@ -199,7 +187,7 @@ def generate_time_options():
 
 # --- MAIN APP ---
 def main():
-    st.title("🧠 NeuroCRM v3.0 (pygsheets)")
+    st.title("🧠 NeuroCRM v3.0 (gspread)")
 
     db = connect_db()
     if not db:
@@ -231,19 +219,16 @@ def main():
                     if mark_slot_booked(db, slot):
                         try:
                             ws = get_patients_ws(db)
-                            ws.append_table(
-                                values=[
-                                    str(datetime.now().timestamp()),
-                                    name,
-                                    phone,
-                                    email,
-                                    "Active",
-                                    "",
-                                    str(datetime.now().date()),
-                                    slot,
-                                ],
-                                dimension="ROWS",
-                            )
+                            ws.append_row([
+                                str(datetime.now().timestamp()),
+                                name,
+                                phone,
+                                email,
+                                "Active",
+                                "",
+                                str(datetime.now().date()),
+                                slot,
+                            ])
                         except Exception as e:
                             st.error(f"პაციენტის მონაცემების შენახვის ერორი: {e}")
                         else:
@@ -270,6 +255,7 @@ def main():
             if st.button("სლოტის დამატება"):
                 if add_new_slot(db, d, t):
                     st.success("✅ სლოტი დამატებულია.")
+                    st.rerun()
                 else:
                     st.error("❌ სლოტის დამატება ვერ მოხერხდა.")
 
@@ -280,7 +266,7 @@ def main():
             if df.empty:
                 st.info("სლოტები არ არის დამატებული.")
             else:
-                df["S"] = df["Date"] + " | " + df["Time"] + " (" + df["Status"] + ")"
+                df["S"] = df["Date"].astype(str) + " | " + df["Time"].astype(str) + " (" + df["Status"].astype(str) + ")"
                 to_del = st.selectbox("აირჩიე სლოტი", df["S"])
                 if st.button("სლოტის წაშლა"):
                     raw = to_del.split(" (")[0]
