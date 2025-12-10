@@ -1,1 +1,14 @@
+{
+  "type": "service_account",
+  "project_id": "neurocrm-480818",
+  "private_key_id": "ac122069e061fd3bc099e735e4d2c26aab154822",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7wZzm4wN4ZGSh\n2U4v8BIEsKFFLG6K7tcVT521HjX4gvgfCs5CiQAF2YVE2xU+m1KXPHFG04Hja7Bq\nf8O6577JzYnLMufvnXc6DkIEfxGgnahSaW6QmgxA/DdPFWP1QoZg3k1dnJpTpeUi\n6lAaMouklv2aJR1hQkhAj8IRD+SjL5tebjim/80KrD0s7a5g9AYo2qqqT0sMG3hG\n94QgAvnKAGHLG8ACQ3AkGgnpA1ODFg1mXREuXtukne782GGaN0pDHh+1+58wDjbE\nRpz4QqwsC5g7vV05VRVwfHO+jzg7nkeKn0SOoJEvm25r+Ph5LY6/mxXI9Geb8qjp\nQm7fyHu3AgMBAAECggEAFNqBQcevB/0mjC9llr90UN8JWnR/5qB2dSB9pLMxTWPG\niTQbCprKzNuHCMnIh0abGr8U2cf+IjNAyeNc6vJ4Z1OT3WTPC/cSWflhbbxrScqY\n+mZJaHgjqkgZIIiArKnx4Opv71jIb0f6tjEOKoq4pdQ7YJaEt9uzyK/u3xRD0bf0\nD0ZjWdDvIy0qJC+nXrxs0gYmKLksUEAz0qs2S3memJJYvTtwu82mQcEqwr39nepq\nRc/ZeNpb4lq5E4DSmrIvwKJRGZxcGie6XrgNJ59tV7I5u5S/ivY8CNllLfr10MUH\nBQasStggUom2AZ+HzFvs+YmxIrCnuR0k9jDkgp0biQKBgQDtg06xIvgH7j3YFM6r\nnzQkTDX+UEgKzsRDvFef40RKpj3piRNwN9v8UayKfBz5/JDwNE5tHHVFOqy6sc/W\nGqdb1pwagrKQwPdYVglFGKaMBPlSG+suRw1OAK9jbdEsaw8UtRFecYt4UGqPCLUZ\n84Ij1e85pErLdRUYdCd+aSAwwwKBgQDKXtpdIQ2KF6w2RWRGg9uukZeebdExoRlN\n1UDdSOGj6fFXCZQuwfwuzg1BY6ivRbx/6KdfbeMXJRgENU1VP5iROwWQcIjmQIfZ\nvMI3/G2z7mSgTl5mhlE9ZJEZMzrn2Hpisr9EEZo1Xv8Nn8XybpumXk4/8PhyIddE\nKaLhbaHZ/QKBgGX+QBmjKZ3GOfqDnOhoGm0H6RvHf9hcSD3KMFqxro7b6rRRr+49\nnpMww4ZIm+zh/5+W5qLGWLmc47XcS6LmmT2/4BMmUuYEZ3MgpyRr3IE+VY5j/M9H\npbf8ZVSuQOfxJW2//7Bt0/WbmtbHZ3W4cwdOhEddfNz371Ir9xW6sR8fAoGBALnh\nmEd0hcAy8E7FPE787LsTJiYyjrU8WUbBu5vGRuPNjY050i+EpQPE5i4KwTWFI5iF\ndb9U6wMmYkHzR74m9RdpFDpQ854y5dWc6PSN26IrNah9c35On655gkGYaeHtWLTx\npHd8h53ATRwRhrug1z1gYBWhXENRTC5i5CaWEdVtAoGAP9HmXtA57OSbBLAZAfC7\nI5DS/VWzO7UA64LHd8XcfikRsyeOCxDMrduRjJjjKslxRdZllkf3byWjQilKtzI9\n7nMAlwhuJFw1g9GWwo0WcX+y8phBnEDDiElbyLp7FrBKh2zn9j7yRAVvGPJXkzWL\nF4STgD8II082XEZv747nRNY=\n-----END PRIVATE KEY-----\n",
+  "client_email": "psycho-bot@neurocrm-480818.iam.gserviceaccount.com",
+  "client_id": "115630339508406851787",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/psycho-bot%40neurocrm-480818.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
 
