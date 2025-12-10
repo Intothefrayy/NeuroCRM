@@ -6,23 +6,49 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
+import json
+import tempfile
+import os
+
+# --- CONFIGURATION FROM SECRETS ---
+try:
+    SENDER_EMAIL = st.secrets.get("email", {}).get("sender_email", "")
+    SENDER_PASSWORD = st.secrets.get("email", {}).get("sender_password", "")
+    ADMIN_PASSWORD = st.secrets.get("admin_password", "admin123")
+except Exception as e:
+    SENDER_EMAIL = ""
+    SENDER_PASSWORD = ""
+    ADMIN_PASSWORD = "admin123"
 
 
 @st.cache_resource
 def connect_db():
     try:
-        # 1) ვიღებთ service account-ის dict-ს Streamlit Secrets-დან
+        # ვიღებთ service account-ის ინფორმაციას Streamlit Secrets-დან
+        if "gcp_service_account" not in st.secrets:
+            raise Exception("gcp_service_account არ არის Streamlit Secrets-ში!")
+
         service_account_info = dict(st.secrets["gcp_service_account"])
 
-        # 2) pygsheets ავტორიზაცია ამ dict-ით
+        # ვამოწმებთ, რომ ყველა საჭირო ველი არის
+        required_fields = ["type", "project_id", "private_key_id", "private_key",
+                          "client_email", "client_id", "auth_uri", "token_uri"]
+        missing = [f for f in required_fields if f not in service_account_info]
+        if missing:
+            raise Exception(f"ამ ველები აკლია: {missing}")
+
+        # pygsheets-ის ავტორიზაცია service account-ით
         gc = pygsheets.authorize(service_account_info=service_account_info)
 
-        # 3) ვხსნით ცხრილს სახელით
+        # ვხსნით ცხრილს
         sh = gc.open("NeuroCRM_DB")
         return sh
 
     except Exception as e:
-        st.error(f"❌ Google Sheets-თან კავშირის კრიტიკული შეცდომა: {e}")
+        st.error(f"❌ Google Sheets-თან კავშირის შეცდომა: {e}")
+        st.error("გთხოვ, დარწმუნდი რომ:")
+        st.error("1. Streamlit Cloud-ზე secrets-ში გაქვს gcp_service_account")
+        st.error("2. Google Sheets-ში NeuroCRM_DB ფაილი გაზიარებულია service account-ის email-ზე")
         return None
 
 
